@@ -20,6 +20,7 @@
 import datetime
 import json
 import os
+import shutil
 import sys
 import time
 import urllib.parse
@@ -31,6 +32,16 @@ CONFIG_FILE = os.path.join(ROOT, "config", "sources.json")
 OUTPUT_DIR = os.path.join(ROOT, "output")
 
 DEFAULT_REPO = "1333555777/tvboxy"  # 本地运行时的占位仓库名，GitHub Actions 会自动覆盖；改成你自己的 GitHub 用户名/仓库名即可
+
+# 配置内引用的下载地址模板，{repo} 会替换成 owner/repo。
+# 为什么不用 raw.githubusercontent.com：该域名在国内会被 DNS 污染（解析到 93.46.8.90
+# 之类的黑洞 IP），电视盒子 / 安卓模拟器里表现为「拉取配置失败 … connect … 10000ms」。
+# jsDelivr 国内可达且带 CDN 加速；要换回官方 raw 或其它加速站，设环境变量覆盖即可：
+#   set TVBOX_URL_BASE=https://ghfast.top/https://raw.githubusercontent.com/{repo}/main/output
+URL_BASE_TEMPLATE = os.environ.get(
+    "TVBOX_URL_BASE",
+    "https://cdn.jsdelivr.net/gh/{repo}@main/output",
+)
 
 # 注意：部分接口的反爬会针对"完整 Chrome UA"下发挑战页，反而用简洁 UA 能正常返回 JSON
 USER_AGENT = "Mozilla/5.0"
@@ -281,7 +292,8 @@ def main() -> int:
         or os.environ.get("REPO")
         or DEFAULT_REPO
     )
-    raw_base = f"https://raw.githubusercontent.com/{repo}/main/output"
+    url_base = URL_BASE_TEMPLATE.format(repo=repo)
+    print(f"配置内引用地址前缀：{url_base}")
 
     status = {"updated_at": now_str, "repo": repo, "sources": []}
     subscriptions = []
@@ -306,7 +318,7 @@ def main() -> int:
                 entry["used_url"] = url
                 entry["error"] = None
                 subscriptions.append(
-                    {"name": name, "url": f"{raw_base}/{sid}.json"}
+                    {"name": name, "url": f"{url_base}/{sid}.json"}
                 )
                 fetched.append((sid, name, data))
                 ok_count += 1
@@ -329,7 +341,7 @@ def main() -> int:
                         cached = json.load(f)
                     if is_valid_tvbox_config(cached):
                         subscriptions.append(
-                            {"name": name, "url": f"{raw_base}/{sid}.json"}
+                            {"name": name, "url": f"{url_base}/{sid}.json"}
                         )
                         fetched.append((sid, name, cached))
                         entry["ok"] = True
@@ -353,13 +365,22 @@ def main() -> int:
     with open(sub_path, "w", encoding="utf-8") as f:
         json.dump({"urls": subscriptions}, f, ensure_ascii=False, indent=2)
 
+    # 另存一份纯 ASCII 文件名的副本：App 里填的入口地址统一用 subscribe.json，
+    # 避免中文文件名在个别播放器里需要百分号编码、填起来容易出错。
+    sub_ascii = os.path.join(OUTPUT_DIR, "subscribe.json")
+    shutil.copyfile(sub_path, sub_ascii)
+    print(f"多仓订阅：{sub_path}  ->  {sub_ascii}")
+
     # 生成聚合单仓文件（把所有成功源的 sites/lives/parses 合并成一个单仓）
     merged = merge_configs(fetched)
     merged_path = os.path.join(OUTPUT_DIR, "单仓聚合.json")
     if merged is not None:
         with open(merged_path, "w", encoding="utf-8") as f:
             json.dump(merged, f, ensure_ascii=False, indent=2)
+        all_ascii = os.path.join(OUTPUT_DIR, "all.json")
+        shutil.copyfile(merged_path, all_ascii)
         print(f"聚合单仓：{merged_path}（共 {len(merged.get('sites', []))} 个站点）")
+        print(f"聚合单仓别名：{all_ascii}")
 
     # 生成更新状态文件（时间取全部抓取完成之后）
     status["updated_at"] = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")

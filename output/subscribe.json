@@ -2,19 +2,19 @@
   "urls": [
     {
       "name": "肥猫",
-      "url": "https://raw.githubusercontent.com/1333555777/tvboxy/main/output/feimao.json"
+      "url": "https://cdn.jsdelivr.net/gh/1333555777/tvboxy@main/output/feimao.json"
     },
     {
       "name": "王二小",
-      "url": "https://raw.githubusercontent.com/1333555777/tvboxy/main/output/wangerxiao.json"
+      "url": "https://cdn.jsdelivr.net/gh/1333555777/tvboxy@main/output/wangerxiao.json"
     },
     {
       "name": "讴歌",
-      "url": "https://raw.githubusercontent.com/1333555777/tvboxy/main/output/ouge.json"
+      "url": "https://cdn.jsdelivr.net/gh/1333555777/tvboxy@main/output/ouge.json"
     },
     {
       "name": "4K小盒子",
-      "url": "https://raw.githubusercontent.com/1333555777/tvboxy/main/output/4k.json"
+      "url": "https://cdn.jsdelivr.net/gh/1333555777/tvboxy@main/output/4k.json"
     }
   ]
 }
