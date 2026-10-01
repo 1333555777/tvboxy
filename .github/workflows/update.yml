@@ -53,8 +53,20 @@ jobs:
             echo "::notice::没有内容变化，跳过提交"
           else
             git commit -m "chore: 自动更新影视仓配置 $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            git push origin main
-            echo "::notice::配置已更新并推送到 main 分支"
+            # 一轮跑几分钟，期间若有人手动推送，本地 HEAD 就落后于远程，
+            # 直接 push 会被拒（! [rejected] ... fetch first）。
+            # 先变基到最新远程再推，并最多重试 5 次。
+            # -X theirs：output/ 是本流程生成物，冲突时以本次生成结果为准。
+            for i in 1 2 3 4 5; do
+              if git pull --rebase -X theirs --autostash origin main && git push origin main; then
+                echo "::notice::配置已更新并推送到 main 分支（第 $i 次尝试成功）"
+                exit 0
+              fi
+              echo "::warning::第 $i 次推送失败，5 秒后重试"
+              sleep 5
+            done
+            echo "::error::连续 5 次推送失败，请检查分支保护规则或仓库权限设置"
+            exit 1
           fi
 
       # jsDelivr 对分支引用有约 12 小时缓存。配置更新后不刷新的话，
