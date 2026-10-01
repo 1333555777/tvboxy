@@ -56,3 +56,17 @@ jobs:
             git push origin main
             echo "::notice::配置已更新并推送到 main 分支"
           fi
+
+      # jsDelivr 对分支引用有约 12 小时缓存。配置更新后不刷新的话，
+      # 电视盒子/播放器会继续拿到旧配置（旧配置里还是被污染的 raw 地址）。
+      - name: Purge jsDelivr CDN cache
+        run: |
+          # 先等 5 分钟，让 raw.githubusercontent.com 自身的缓存过期，
+          # 否则 jsDelivr 回源会取到旧内容并把它再缓存 12 小时。
+          sleep 300
+          for f in subscribe.json all.json; do
+            echo "purge $f"
+            curl -s -o /dev/null -w "%{http_code}\n" \
+              "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/output/$f" || true
+          done
+          echo "::notice::jsDelivr 缓存已刷新"
