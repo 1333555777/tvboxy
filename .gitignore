@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 本地 HTTP 服务日志
+.httpd.log
+output/.httpd.log
+
+# 本地令牌文件（切勿提交）
+token.txt
