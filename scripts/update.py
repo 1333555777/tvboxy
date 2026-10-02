@@ -20,6 +20,7 @@
 import datetime
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -123,6 +124,86 @@ def _should_retry(err: Exception, resp_text_len: int = -1) -> bool:
     return False
 
 
+def decode_body(resp) -> str:
+    """按字节正确解码响应体。
+
+    坑：`resp.text` 会在响应头没写 charset 时交给 charset 自动探测，
+    尤其中文 UTF-8 配置在部分探测实现里会被误判成 cp1251 之类，
+    整份配置的站点名瞬间变成西里尔乱码，而且这种乱码**不可逆**。
+    所以这里一律按字节解码：优先响应头 charset，其次 UTF-8，再退 GB18030。
+    """
+    ctype = resp.headers.get("Content-Type", "") or ""
+    m = re.search(r"charset\s*=\s*\"?([\w\-]+)", ctype, re.I)
+    if m:
+        enc = m.group(1)
+        try:
+            return resp.content.decode(enc)
+        except (LookupError, UnicodeDecodeError):
+            pass
+    for enc in ("utf-8", "gb18030"):
+        try:
+            return resp.content.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return resp.content.decode("utf-8", errors="replace")
+
+
+def looks_mojibake(data) -> bool:
+    """粗检配置是否被错误解码成了乱码。
+
+    中文 TVBox 配置里出现西里尔字母（U+0400–U+04FF）基本只可能是
+    「UTF-8 被当成西里尔单字节编码解码」，属于不可逆损坏。
+    宁可判为失败去试下一个地址 / 回退缓存，也不要把它发布出去。
+    """
+    hits = 0
+
+    def walk(node):
+        nonlocal hits
+        if isinstance(node, str):
+            hits += sum(1 for ch in node if "\u0400" <= ch <= "\u04ff")
+        elif isinstance(node, dict):
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(data)
+    return hits > 5
+
+
+def pick_home_first(sites, timeout: int = 8):
+    """挑一个纯 XML 接口站点作为聚合配置的默认首页源。
+
+    为什么要挑：聚合配置的 sites[0] 就是客户端的默认首页源。
+    如果首位是 type=3（依赖 jar 蜘蛛）的站点，蜘蛛冷启动慢或抽风时
+    首页会一直空着（客户端只有 20 秒超时，超时后拿到 null 就是空白页）。
+    type=1 是苹果CMS 那类纯 HTTP XML 接口，走普通网络请求，最稳。
+
+    做法：按顺序实测，返回**第一个真正有响应且带分类列表**的站点 key。
+    实测过一遍就不会把一个已经挂掉的接口推到首位。
+    """
+    for s in sites:
+        if str(s.get("type")) != "1":
+            continue
+        api = (s.get("api") or "").strip()
+        if not api.startswith("http"):
+            continue
+        probe = api.rstrip("/") + ("?ac=list" if "?" not in api else "&ac=list")
+        try:
+            r = requests.get(probe, timeout=timeout, headers={"User-Agent": USER_AGENT})
+            if (
+                r.status_code == 200
+                and len(r.content) > 200
+                and ("<class>" in r.text or "type_id" in r.text)
+            ):
+                print(f"      默认首页源选中：{s.get('name')} ({s.get('key')})")
+                return s.get("key")
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
+
 def fetch_config(url: str) -> dict:
     """抓取单个地址并解析为 JSON dict；失败时抛出异常。"""
     target = idn_encode(url)
@@ -139,13 +220,15 @@ def fetch_config(url: str) -> dict:
                 allow_redirects=True,
             )
             resp.raise_for_status()
-            data = parse_json_lenient(resp.text)
+            data = parse_json_lenient(decode_body(resp))
             if not is_valid_tvbox_config(data):
                 raise ValueError("返回内容不是 TVBox 配置（缺少 sites/spiders/lives 等字段）")
+            if looks_mojibake(data):
+                raise ValueError("响应编码异常导致中文乱码（疑似 charset 被误判），丢弃本次结果")
             return data
         except Exception as e:  # noqa: BLE001
             last_err = e
-            text_len = len(getattr(resp, "text", "") or "") if "resp" in locals() else -1
+            text_len = len(getattr(resp, "content", b"") or b"") if "resp" in locals() else -1
             if _should_retry(e, text_len) and attempt < MAX_RETRIES:
                 wait = RETRY_BACKOFF * attempt * 2
                 print(f"      (第 {attempt} 次失败：{e}，{wait}s 后重试)")
@@ -213,6 +296,12 @@ def merge_configs(fetched):
                 s["key"] = new_key
             sites.append(s)
     merged["sites"] = sites
+
+    # 把实测可用的纯 XML 接口站点提到首位，作为客户端默认首页源（详见 pick_home_first）
+    home_key = pick_home_first(sites)
+    if home_key:
+        sites.sort(key=lambda s: 0 if s.get("key") == home_key else 1)
+        merged["homeFirst"] = home_key
 
     for field in ("lives", "parses", "doh", "rules", "flags", "exts"):
         merged[field] = _merge_list(fetched, field)
@@ -340,6 +429,12 @@ def main() -> int:
                     with open(cache_path, "r", encoding="utf-8") as f:
                         cached = json.load(f)
                     if is_valid_tvbox_config(cached):
+                        if looks_mojibake(cached):
+                            entry["mojibake"] = True
+                            print(
+                                f"[WARN] {name}  缓存里的中文疑似乱码（编码被误判过），"
+                                "本次仍沿用，但建议尽快让该源恢复可访问以刷新缓存"
+                            )
                         subscriptions.append(
                             {"name": name, "url": f"{url_base}/{sid}.json"}
                         )
