@@ -1,13 +1,14 @@
 {
-  "updated_at": "2026-11-02 16:51:31",
+  "updated_at": "2026-11-03 06:39:52",
   "repo": "1333555777/tvboxy",
   "sources": [
     {
       "id": "feimao",
       "name": "肥猫",
       "ok": true,
-      "used_url": "http://肥猫.net/tv",
-      "error": null
+      "used_url": "(缓存)",
+      "error": "401 Client Error:  for url: https://6296.kstore.vip/facat.json",
+      "cached": true
     },
     {
       "id": "fantaiying",
@@ -71,7 +72,7 @@
       "name": "潇洒",
       "ok": false,
       "used_url": null,
-      "error": "HTTPSConnectionPool(host='9877.kstore.space', port=443): Read timed out. (read timeout=20)"
+      "error": "404 Client Error:  for url: https://9877.kstore.space/AnotherD/api.json"
     }
   ]
 }
