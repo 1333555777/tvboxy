@@ -40,38 +40,23 @@
   "warningText": "本配置由 4 个公开源自动聚合（含肥猫等），仅供学习交流，请勿商用",
   "sites": [
     {
-      "key": "豪华资源",
-      "name": "🎥┃豪华┃资源",
+      "key": "ikunzy",
+      "name": "🐓┃爱坤┃资源",
       "type": 1,
-      "api": "https://hhzyapi.com/api.php/provide/vod/?ac=list",
+      "api": "https://ikunzyapi.com/api.php/provide/vod ",
       "searchable": 1,
-      "quickSearch": 1,
+      "filterable": 0,
       "categories": [
-        "内地剧",
-        "香港剧",
         "欧美剧",
         "韩剧",
         "日剧",
-        "马泰剧",
-        "台湾剧",
-        "动画片",
-        "中国动漫",
-        "日本动漫",
-        "欧美动漫",
-        "剧情片",
-        "战争片",
         "动作片",
-        "科幻片",
-        "记录片",
-        "爱情片",
         "喜剧片",
-        "灾难片",
-        "悬疑片",
-        "犯罪片",
-        "大陆综艺",
-        "日韩综艺",
-        "港台综艺",
-        "欧美综艺"
+        "爱情片",
+        "科幻片",
+        "恐怖片",
+        "剧情片",
+        "战争片"
       ]
     },
     {
@@ -1953,26 +1938,6 @@
       "jar": "https://tvbox.cainisi.cf/jar/fty0101.jar;md5;fd784008ab71d81a178564841059756d"
     },
     {
-      "key": "ikunzy",
-      "name": "🐓┃爱坤┃资源",
-      "type": 1,
-      "api": "https://ikunzyapi.com/api.php/provide/vod ",
-      "searchable": 1,
-      "filterable": 0,
-      "categories": [
-        "欧美剧",
-        "韩剧",
-        "日剧",
-        "动作片",
-        "喜剧片",
-        "爱情片",
-        "科幻片",
-        "恐怖片",
-        "剧情片",
-        "战争片"
-      ]
-    },
-    {
       "key": "天天",
       "name": "💡┃天天┃影视",
       "type": 3,
@@ -1997,6 +1962,41 @@
       "api": "csp_AppYsV2",
       "ext": "http://xiutan.shiyifacai.com/zuoan/api.php/app/",
       "jar": "http://xiaohu.xzam.cn/jar/1.jar;md5;6120d08f4eb1edce507bfcd1b339c482"
+    },
+    {
+      "key": "豪华资源",
+      "name": "🎥┃豪华┃资源",
+      "type": 1,
+      "api": "https://hhzyapi.com/api.php/provide/vod/?ac=list",
+      "searchable": 1,
+      "quickSearch": 1,
+      "categories": [
+        "内地剧",
+        "香港剧",
+        "欧美剧",
+        "韩剧",
+        "日剧",
+        "马泰剧",
+        "台湾剧",
+        "动画片",
+        "中国动漫",
+        "日本动漫",
+        "欧美动漫",
+        "剧情片",
+        "战争片",
+        "动作片",
+        "科幻片",
+        "记录片",
+        "爱情片",
+        "喜剧片",
+        "灾难片",
+        "悬疑片",
+        "犯罪片",
+        "大陆综艺",
+        "日韩综艺",
+        "港台综艺",
+        "欧美综艺"
+      ]
     },
     {
       "key": "hnzy",
@@ -2248,7 +2248,7 @@
       "ext": "http://127.0.0.1:9978/file/tvbox/tok.txt"
     }
   ],
-  "homeFirst": "豪华资源",
+  "homeFirst": "ikunzy",
   "lives": [
     {
       "name": "Gather「果」",
