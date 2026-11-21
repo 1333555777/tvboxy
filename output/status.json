@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-21 05:46:37",
+  "updated_at": "2026-11-21 17:12:29",
   "repo": "1333555777/tvboxy",
   "sources": [
     {
@@ -72,7 +72,7 @@
       "name": "潇洒",
       "ok": false,
       "used_url": null,
-      "error": "HTTPSConnectionPool(host='9877.kstore.space', port=443): Read timed out. (read timeout=20)"
+      "error": "502 Server Error: Bad Gateway for url: https://9877.kstore.space/AnotherD/api.json"
     }
   ]
 }
