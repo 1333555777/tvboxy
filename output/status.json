@@ -1,14 +1,13 @@
 {
-  "updated_at": "2026-11-22 04:27:29",
+  "updated_at": "2026-11-22 17:20:38",
   "repo": "1333555777/tvboxy",
   "sources": [
     {
       "id": "feimao",
       "name": "肥猫",
       "ok": true,
-      "used_url": "(缓存)",
-      "error": "401 Client Error:  for url: https://6296.kstore.vip/facat.json",
-      "cached": true
+      "used_url": "https://6296.kstore.vip/facat.json",
+      "error": null
     },
     {
       "id": "fantaiying",
@@ -72,7 +71,7 @@
       "name": "潇洒",
       "ok": false,
       "used_url": null,
-      "error": "HTTPSConnectionPool(host='9877.kstore.space', port=443): Read timed out. (read timeout=20)"
+      "error": "502 Server Error: Bad Gateway for url: https://9877.kstore.space/AnotherD/api.json"
     }
   ]
 }
